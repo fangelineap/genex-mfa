@@ -1,6 +1,53 @@
+'use client'
+
 import Image from "next/image";
+import { useState } from "react";
+import QRCodeDisplay from "./components/QRCodeDisplay";
+import { enableMFA } from "./login/actions";
+
+interface MFAData {
+  factorId: string;
+  qrCode: string;
+  secret: string;
+  uri: string;
+  message: string;
+}
 
 export default function Home() {
+  const [mfaData, setMfaData] = useState<MFAData | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const handleEnableMFA = async () => {
+    setIsLoading(true);
+    // try {
+    //   const response = await fetch('/api/enable-mfa', {
+    //     method: 'POST',
+    //   });
+      
+    //   if (response.ok) {
+    //     const data = await response.json();
+    //     console.log('MFA response:', data);
+    //     setMfaData(data);
+    //   } else {
+    //     const error = await response.json();
+    //     alert('Error enabling MFA: ' + error.message);
+    //   }
+    // } catch (error) {
+    //   console.error("Error enabling MFA:", error);
+    //   alert('Error enabling MFA. Check console for details.');
+    // } finally {
+    //   setIsLoading(false);
+    // }
+
+    const data = await enableMFA()
+
+    if(data) {
+      setMfaData(data);
+    }
+
+    setIsLoading(false);
+  };
+
   return (
     <div className="font-sans grid grid-rows-[20px_1fr_20px] items-center justify-items-center min-h-screen p-8 pb-20 gap-16 sm:p-20">
       <main className="flex flex-col gap-[32px] row-start-2 items-center sm:items-start">
@@ -50,6 +97,35 @@ export default function Home() {
             Read our docs
           </a>
         </div>
+
+        <div className="flex gap-4 items-center flex-col sm:flex-row mt-8">
+          <button
+            onClick={handleEnableMFA}
+            disabled={isLoading}
+            className="rounded-full border border-solid border-blue-500 transition-colors flex items-center justify-center bg-blue-500 text-white gap-2 hover:bg-blue-600 disabled:bg-gray-400 disabled:cursor-not-allowed font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
+          >
+            {isLoading ? "⏳ Loading..." : "🔒 Enable MFA"}
+          </button>
+          <a
+            href="/login"
+            className="rounded-full border border-solid border-gray-300 transition-colors flex items-center justify-center hover:bg-gray-100 font-medium text-sm sm:text-base h-10 sm:h-12 px-4 sm:px-5"
+          >
+            Login
+          </a>
+        </div>
+
+        {mfaData && (
+          <div className="mt-8 w-full max-w-md">
+            <QRCodeDisplay value={mfaData.uri} />
+            <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-lg">
+              <h4 className="font-semibold text-green-800">✅ MFA Enabled Successfully!</h4>
+              <p className="text-sm text-green-700 mt-2">{mfaData.message}</p>
+              <p className="text-xs text-green-600 mt-2">
+                Factor ID: <span className="font-mono">{mfaData.factorId}</span>
+              </p>
+            </div>
+          </div>
+        )}
       </main>
       <footer className="row-start-3 flex gap-[24px] flex-wrap items-center justify-center">
         <a
