@@ -23,6 +23,7 @@ export default async function login(formData: FormData) {
     redirect("/error");
   }
 
+  // Check if MFA is required for this user
   const { data: listFactorData, error } = await supabase.auth.mfa.listFactors();
 
   if (error) {
@@ -32,13 +33,15 @@ export default async function login(formData: FormData) {
   console.log('MFA factors:', listFactorData);
 
   if (listFactorData!.all?.length > 0) {
-    console.log("✅ User has MFA factors enabled:", listFactorData?.all);
+    console.log("✅ User has MFA factors enabled - redirecting to MFA challenge");
+    // User has MFA enabled, redirect to MFA challenge page
+    redirect("/mfa-challenge");
   } else {
     console.log("❌ No MFA enabled yet");
+    // No MFA, proceed normally
+    revalidatePath("/", "layout");
+    redirect("/");
   }
-
-  revalidatePath("/", "layout");
-  redirect("/");
 }
 
 export async function signup(formData: FormData) {
@@ -113,4 +116,134 @@ export async function enableMFA() {
       console.log('Error Message:', errorMessage)
       return;
     }
+}
+
+export async function completeMFAEnrollment(formData: FormData) {
+  const supabase = await createClient();
+  
+  try {
+    const factorId = formData.get("factorId") as string;
+    const code = formData.get("code") as string;
+    
+    if (!factorId || !code) {
+      return { error: 'Factor ID and code are required' };
+    }
+    
+    console.log('Completing MFA enrollment with:', { factorId, code });
+    
+    // Check factor status first
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const factor = factors?.all?.find(f => f.id === factorId);
+    console.log('Factor status:', factor?.status, 'Type:', factor?.factor_type);
+    
+    // Challenge and verify the enrolled factor to complete setup
+    const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+      factorId: factorId
+    });
+    
+    if (challengeError) {
+      console.error('MFA challenge failed:', challengeError);
+      return { error: challengeError.message };
+    }
+    
+    const { data, error } = await supabase.auth.mfa.verify({
+      factorId: factorId,
+      challengeId: challengeData.id,
+      code
+    });
+    
+    if (error) {
+      console.error('MFA enrollment verification failed:', error);
+      return { error: error.message };
+    }
+    
+    console.log('MFA enrollment completed successfully:', data);
+    return { success: true, message: 'MFA enrollment completed successfully' };
+    
+  } catch (err) {
+    console.error('MFA enrollment completion error:', err);
+    return { error: 'Failed to complete MFA enrollment' };
+  }
+}
+
+export async function verifyMFAWithChallenge(formData: FormData) {
+  const supabase = await createClient();
+  
+  try {
+    const code = formData.get("code") as string;
+    
+    if (!code) {
+      return { error: 'Code is required' };
+    }
+    
+    // Get the factor ID for challenge and verification
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const totpFactor = factors?.all?.find(factor => factor.factor_type === 'totp');
+    
+    if (!totpFactor) {
+      return { error: 'No TOTP factor found' };
+    }
+    
+    // Create challenge and verify in the same request to avoid IP mismatch
+    const { data: challengeData, error: challengeError } = await supabase.auth.mfa.challenge({
+      factorId: totpFactor.id
+    });
+    
+    if (challengeError) {
+      return { error: challengeError.message };
+    }
+    
+    console.log('MFA challenge created:', challengeData);
+    console.log('Attempting verification with:', {
+      factorId: totpFactor.id,
+      challengeId: challengeData.id,
+      code: code
+    });
+    
+    // Immediately verify with the challenge ID
+    const { data, error } = await supabase.auth.mfa.verify({
+      factorId: totpFactor.id,
+      challengeId: challengeData.id,
+      code
+    });
+    
+    if (error) {
+      console.error('MFA verification failed:', error);
+      return { error: error.message };
+    }
+    
+    console.log('MFA verification successful:', data);
+    
+    // MFA verification successful, redirect to main app
+    revalidatePath("/", "layout");
+  } catch (err) {
+    console.error('MFA verification error:', err);
+    return { error: 'Failed to verify MFA code' };
+  }
+}
+
+export async function unenrollMFA() {
+  const supabase = await createClient();
+  
+  try {
+    const { data: factors } = await supabase.auth.mfa.listFactors();
+    const totpFactor = factors?.all?.find(factor => factor.factor_type === 'totp');
+    
+    if (!totpFactor) {
+      return { error: 'No verified TOTP factor found' };
+    }
+    
+    const { data, error } = await supabase.auth.mfa.unenroll({
+      factorId: totpFactor.id
+    });
+    
+    if (error) {
+      return { error: error.message };
+    }
+    
+    return { success: true, challengeId: data.id };
+  } catch (err) {
+    console.error('MFA challenge error:', err);
+    return { error: 'Failed to unenroll MFA challenge' };
+  }
 }

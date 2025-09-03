@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useState } from "react";
 import QRCodeDisplay from "./components/QRCodeDisplay";
-import { enableMFA } from "./login/actions";
+import { enableMFA, completeMFAEnrollment } from "./login/actions";
 
 interface MFAData {
   factorId: string;
@@ -16,6 +16,10 @@ interface MFAData {
 export default function Home() {
   const [mfaData, setMfaData] = useState<MFAData | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [verificationCode, setVerificationCode] = useState('');
+  const [verificationError, setVerificationError] = useState('');
+  const [isVerifying, setIsVerifying] = useState(false);
+  const [isEnrollmentComplete, setIsEnrollmentComplete] = useState(false);
 
   const handleEnableMFA = async () => {
     setIsLoading(true);
@@ -46,6 +50,21 @@ export default function Home() {
     }
 
     setIsLoading(false);
+  };
+
+  const handleCompleteEnrollment = async (formData: FormData) => {
+    setIsVerifying(true);
+    setVerificationError('');
+
+    const result = await completeMFAEnrollment(formData);
+    
+    if (result?.error) {
+      setVerificationError(result.error);
+    } else {
+      setIsEnrollmentComplete(true);
+    }
+    
+    setIsVerifying(false);
   };
 
   return (
@@ -114,15 +133,67 @@ export default function Home() {
           </a>
         </div>
 
-        {mfaData && (
+        {mfaData && !isEnrollmentComplete && (
           <div className="mt-8 w-full max-w-md">
             <QRCodeDisplay value={mfaData.uri} />
-            <div className="mt-4 p-4 bg-green-100 border border-green-300 rounded-lg">
-              <h4 className="font-semibold text-green-800">✅ MFA Enabled Successfully!</h4>
-              <p className="text-sm text-green-700 mt-2">{mfaData.message}</p>
-              <p className="text-xs text-green-600 mt-2">
-                Factor ID: <span className="font-mono">{mfaData.factorId}</span>
+            
+            <div className="mt-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
+              <h4 className="font-semibold text-blue-800">📱 Complete MFA Setup</h4>
+              <p className="text-sm text-blue-700 mt-2">
+                After scanning the QR code, enter the 6-digit code from your authenticator app to complete setup.
               </p>
+              
+              <form action={handleCompleteEnrollment} className="mt-4 space-y-4">
+                <input type="hidden" name="factorId" value={mfaData.factorId} />
+                
+                <div>
+                  <label htmlFor="code" className="block text-sm font-medium text-blue-800">
+                    Verification Code
+                  </label>
+                  <input
+                    id="code"
+                    name="code"
+                    type="text"
+                    required
+                    maxLength={6}
+                    className="mt-1 block w-full px-3 py-2 text-center text-lg tracking-widest border border-blue-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                    placeholder="000000"
+                    value={verificationCode}
+                    onChange={(e) => setVerificationCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                  />
+                </div>
+
+                {verificationError && (
+                  <div className="p-3 bg-red-50 border border-red-200 rounded-md">
+                    <p className="text-sm text-red-800">{verificationError}</p>
+                  </div>
+                )}
+
+                <button
+                  type="submit"
+                  disabled={isVerifying || verificationCode.length !== 6}
+                  className="w-full bg-blue-600 hover:bg-blue-700 disabled:bg-gray-400 text-white font-medium py-2 px-4 rounded-md transition-colors"
+                >
+                  {isVerifying ? 'Verifying...' : 'Complete MFA Setup'}
+                </button>
+              </form>
+            </div>
+          </div>
+        )}
+
+        {isEnrollmentComplete && (
+          <div className="mt-8 w-full max-w-md">
+            <div className="p-4 bg-green-100 border border-green-300 rounded-lg">
+              <h4 className="font-semibold text-green-800">✅ MFA Setup Complete!</h4>
+              <p className="text-sm text-green-700 mt-2">
+                Your two-factor authentication has been successfully enabled. You'll now be prompted for a verification code when logging in.
+              </p>
+              <a
+                href="/login"
+                className="inline-block mt-4 bg-green-600 hover:bg-green-700 text-white font-medium py-2 px-4 rounded-md transition-colors"
+              >
+                Go to Login
+              </a>
             </div>
           </div>
         )}
