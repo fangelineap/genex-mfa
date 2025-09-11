@@ -161,6 +161,18 @@ function getNextVersion(currentBranch, allTags) {
 }
 
 function getBaseVersion() {
+    // For release branch, use the latest tag from git instead of package.json
+    try {
+        const latestTag = getLatestTag();
+        const version = parseVersion(latestTag);
+        if (version) {
+            return version;
+        }
+    } catch (error) {
+        console.log('Could not get latest tag, falling back to package.json');
+    }
+    
+    // Fallback to package.json version
     const packageJson = require('../package.json');
     const version = parseVersion(`v${packageJson.version}`);
     return version || { major: 0, minor: 1, patch: 0, beta: null };
