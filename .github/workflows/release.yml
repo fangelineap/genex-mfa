@@ -1,4 +1,4 @@
-name: Release (beta on main, prod on release)
+name: Release (auto-tagging based on branch type)
 
 on:
   push:
@@ -30,15 +30,15 @@ jobs:
         with:
           fetch-depth: 0
           fetch-tags: true
-      - uses: mathieudutour/github-tag-action@v6.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
         with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          pre_release_branches: main
-          release_branches: release
-          append_to_pre_release_tag: beta
-          default_prerelease_bump: patch
-          tag_prefix: 'v'
-          custom_release_rules: |
-            fix:patch
-            feat:minor
-            BREAKING CHANGE:major
+          node-version: '20.x'
+      - name: Configure Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+      - name: Run auto-tagging script
+        run: node scripts/auto-tag.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
