@@ -3,6 +3,43 @@
 const { execSync } = require('child_process');
 
 function getCurrentBranch() {
+    // In GitHub Actions, try to get the source branch from environment or commit message
+    if (process.env.GITHUB_HEAD_REF) {
+        // This is set for pull requests
+        return process.env.GITHUB_HEAD_REF;
+    }
+    
+    if (process.env.GITHUB_REF_NAME) {
+        const currentBranch = process.env.GITHUB_REF_NAME;
+        
+        // If we're on main or release, try to detect source branch from recent commit
+        if (currentBranch === 'main' || currentBranch === 'release') {
+            try {
+                // Get the most recent commit message
+                const commitMessage = execSync('git log -1 --pretty=format:"%s"', { encoding: 'utf8' }).trim();
+                
+                // Look for merge commit patterns
+                const mergeMatch = commitMessage.match(/Merge pull request #\d+ from .+\/(feat|fix)\/(.+)/);
+                if (mergeMatch) {
+                    return `${mergeMatch[1]}/branch-from-merge`;
+                }
+                
+                // Look for commit message prefixes
+                if (commitMessage.startsWith('feat:') || commitMessage.startsWith('feat(')) {
+                    return 'feat/from-commit';
+                }
+                if (commitMessage.startsWith('fix:') || commitMessage.startsWith('fix(')) {
+                    return 'fix/from-commit';
+                }
+            } catch (error) {
+                console.log('Could not detect source branch from commit message');
+            }
+        }
+        
+        return currentBranch;
+    }
+    
+    // Fallback to git command (local usage)
     return execSync('git rev-parse --abbrev-ref HEAD', { encoding: 'utf8' }).trim();
 }
 
