@@ -2,10 +2,10 @@ name: Release (auto-tagging based on branch type)
 
 on:
   pull_request:
-    branches: [ release ]
+    branches: [ main ]
     types: [closed]
   push:
-    branches: [ main ]
+    branches: [ release ]
   workflow_dispatch:
 
 permissions:
