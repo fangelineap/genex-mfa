@@ -103,8 +103,8 @@ function getNextVersion(currentBranch) {
   console.log("Base version for main:", formatVersion(parsedBaseVersion));
   console.log("Latest beta version:", parsedBetaVersion ? formatVersion(parsedBetaVersion, true) : "none");
   if (
-    parsedBetaVersion.major != parsedBaseVersion.major &&
-    parsedBetaVersion.minor != parsedBaseVersion.minor &&
+    parsedBetaVersion.major != parsedBaseVersion.major ||
+    parsedBetaVersion.minor != parsedBaseVersion.minor ||
     parsedBetaVersion.patch != parsedBaseVersion.patch
   ) {
     const newVersion = {
