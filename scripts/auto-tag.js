@@ -89,16 +89,19 @@ function getNextVersion(currentBranch) {
     if (version && version.beta !== null) {
       return formatVersion(version, false);
     }
+
+    console.log("No beta version found, using latest tag");
+
     return latestTag;
   }
 
   const baseVersion = getLatestTag("release");
-  console.log("Base version for main:", formatVersion(baseVersion));
   const latestBetaVersion = getLatestTag("main");
-  console.log("Latest beta version:", latestBetaVersion ? formatVersion(latestBetaVersion, true) : "none");
-
+  
   const parsedBaseVersion = parseVersion(baseVersion);
   const parsedBetaVersion = parseVersion(latestBetaVersion);
+  console.log("Base version for main:", formatVersion(parsedBaseVersion));
+  console.log("Latest beta version:", parsedBetaVersion ? formatVersion(parsedBetaVersion, true) : "none");
   if (
     parsedBetaVersion.major != parsedBaseVersion.major &&
     parsedBetaVersion.minor != parsedBaseVersion.minor &&
@@ -119,6 +122,8 @@ function getNextVersion(currentBranch) {
         beta: 0,
       };
 
+      console.log('New version for feat:', formatVersion(newVersion, true));
+
       return formatVersion(newVersion, true);
     } else if (branchType == "fix") {
       const newVersion = {
@@ -127,6 +132,8 @@ function getNextVersion(currentBranch) {
         patch: parsedBaseVersion.patch + 1,
         beta: 0,
       };
+
+      console.log('New version for fix:', formatVersion(newVersion, true));
 
       return formatVersion(newVersion, true);
     }
