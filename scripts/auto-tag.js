@@ -1,3 +1,5 @@
+const { execSync } = require('child_process');
+
 function getCurrentBranch() {
   // In GitHub Actions, try to get the source branch from environment or commit message
   if (process.env.GITHUB_HEAD_REF) {
