@@ -62,6 +62,7 @@ function formatVersion(version, isBeta = false) {
 function getAllTags() {
   try {
     const tags = execSync("git tag -l", { encoding: "utf8" }).trim();
+    console.log("Tags", tags);
     return tags ? tags.split("\n") : [];
   } catch {
     return [];
@@ -134,13 +135,30 @@ function getNextVersion(currentBranch) {
 
 function getLatestTag(branch) {
   try {
-    return execSync(`git describe --tags --abbrev=0 origin/${branch}`, { encoding: "utf8" }).trim();
+    const latestTag = execSync(`git describe --tags --abbrev=0 origin/${branch}`, { encoding: "utf8" }).trim();
+    console.log("Latest Tag", latestTag);
+
+    return latestTag;
   } catch {
     return "v0.1.0"; // Default base tag
   }
 }
 
-function createTag() {}
+function createTag(tagName) {
+  try {
+    execSync(`git tag ${tagName}`, { stdio: "inherit" });
+    console.log(`Created tag: ${tagName}`);
+
+    // Push the tag to remote
+    execSync(`git push origin ${tagName}`, { stdio: "inherit" });
+    console.log(`Pushed tag: ${tagName}`);
+
+    return true;
+  } catch (error) {
+    console.error(`Failed to create/push tag: ${error.message}`);
+    return false;
+  }
+}
 
 function main() {
   const currentBranch = getCurrentBranch();
