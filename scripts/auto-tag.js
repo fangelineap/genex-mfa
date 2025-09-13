@@ -83,11 +83,12 @@ function getNextVersion(currentBranch) {
   const branchType = getBranchType(currentBranch);
   console.log(`Branch type: ${branchType}`);
 
+  //if merged to release, release the new tag based on main's latest beta
   if (branchType === "release") {
     const latestTag = getLatestTag("main");
     const version = parseVersion(latestTag);
     if (version && version.beta !== null) {
-      return formatVersion(version, false);
+      return formatVersion({...version, minor: 0, patch: 0}, false);
     }
 
     console.log("No beta version found, using latest tag");
@@ -95,6 +96,7 @@ function getNextVersion(currentBranch) {
     return latestTag;
   }
 
+  //else if merged to main from another feat/fix branch, create a new beta tag based on the last stable version
   const baseVersion = getLatestTag("release");
   const latestBetaVersion = getLatestTag("main");
   
@@ -102,6 +104,8 @@ function getNextVersion(currentBranch) {
   const parsedBetaVersion = parseVersion(latestBetaVersion);
   console.log("Base version for main:", formatVersion(parsedBaseVersion));
   console.log("Latest beta version:", parsedBetaVersion ? formatVersion(parsedBetaVersion, true) : "none");
+  
+  //if there's a beta version, increment it if it's the same base version, else start a new beta series
   if (
     parsedBetaVersion.major != parsedBaseVersion.major ||
     parsedBetaVersion.minor != parsedBaseVersion.minor ||
@@ -114,6 +118,7 @@ function getNextVersion(currentBranch) {
 
     return formatVersion(newVersion, true);
   } else {
+    //if it's from a feat branch, increment minor, if fix branch increment patch
     if (branchType == "feat") {
       const newVersion = {
         major: parsedBaseVersion.major,
