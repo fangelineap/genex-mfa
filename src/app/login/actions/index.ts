@@ -2,7 +2,6 @@
 
 import { createClient } from "@/app/utils/supabase";
 import { revalidatePath } from "next/cache";
-import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 
 export default async function login(formData: FormData) {
@@ -65,8 +64,6 @@ export async function signup(formData: FormData) {
 }
 
 export async function enableMFA() {
-  const supabase = await createClient();
-  
     try {
       const supabase = await createClient();
       

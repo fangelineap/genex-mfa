@@ -186,7 +186,7 @@ export default function Home() {
             <div className="p-4 bg-green-100 border border-green-300 rounded-lg">
               <h4 className="font-semibold text-green-800">✅ MFA Setup Complete!</h4>
               <p className="text-sm text-green-700 mt-2">
-                Your two-factor authentication has been successfully enabled. You'll now be prompted for a verification code when logging in.
+                Your two-factor authentication has been successfully enabled. You&apos;ll now be prompted for a verification code when logging in.
               </p>
               <a
                 href="/login"
