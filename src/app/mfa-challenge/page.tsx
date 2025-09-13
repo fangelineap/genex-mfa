@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { unenrollMFA, verifyMFAWithChallenge } from "@/app/login/actions";
 import { redirect } from "next/navigation";
 
