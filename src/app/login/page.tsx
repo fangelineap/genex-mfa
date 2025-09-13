@@ -1,7 +1,7 @@
 'use client'
 
 import React from "react";
-import login, { enableMFA } from "./actions";
+import login from "./actions";
 
 const LoginPage = () => {
   const loginFunc = async (e: React.FormEvent<HTMLFormElement>) => {
