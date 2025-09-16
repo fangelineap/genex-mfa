@@ -86,7 +86,7 @@ export default function MFAChallenge() {
             >
               Unenroll
             </button>
-            <p>Test tagging logic for feat 1</p>
+            <p>Test tagging logic for feat 3</p>
           </div>
         </form>
       </div>
