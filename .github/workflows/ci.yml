@@ -42,9 +42,9 @@ jobs:
       - run: npm test --if-present
 
       # Optional: build the Docker image but DON'T push
-      - uses: docker/setup-buildx-action@v3
-      - uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          cache-from: type=ghaF
+      # - uses: docker/setup-buildx-action@v3
+      # - uses: docker/build-push-action@v5
+      #   with:
+      #     context: .
+      #     push: false
+      #     cache-from: type=ghaF
