@@ -88,7 +88,7 @@ function getNextVersion(currentBranch) {
     const latestTag = getLatestTag("main");
     const version = parseVersion(latestTag);
     if (version && version.beta !== null) {
-      return formatVersion({...version, patch: 0}, false);
+      return formatVersion(version, false);
     }
 
     console.log("No beta version found, using latest tag");
@@ -123,7 +123,7 @@ function getNextVersion(currentBranch) {
       const newVersion = {
         major: parsedBaseVersion.major,
         minor: parsedBaseVersion.minor + 1,
-        patch: parsedBaseVersion.patch,
+        patch: 0,
         beta: 0,
       };
 
